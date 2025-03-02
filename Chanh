@@ -1,0 +1,79 @@
+local function getQuest()
+    -- Check and retrieve the current quest
+    for i, v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Quest.QuestBoard:GetChildren()) do
+        if v:IsA("TextLabel") and string.find(v.Text, "Defeat") then
+            return true
+        end
+    end
+    return false
+end
+
+local function getMonster()
+    -- Retrieve monster list based on quest
+    local monsterList = {
+        ["Bandit"] = {CFrame = CFrame.new(1038, 41, 1576)},
+        ["Gorilla"] = {CFrame = CFrame.new(-1168, 40, 5004)}
+    }
+    for name, data in pairs(monsterList) do
+        if string.find(game:GetService("Players").LocalPlayer.PlayerGui.Quest.QuestBoard.Text, name) then
+            return data.CFrame
+        end
+    end
+    return nil
+end
+
+local function attackFromDistance(target)
+    -- Auto Click attack from distance
+    while _G.AutoClick and target and target.Parent do
+        local args = {
+            [1] = "Combat",
+            [2] = "Click"
+        }
+        game:GetService("ReplicatedStorage").Remotes.Combat:InvokeServer(unpack(args))
+        wait(0.2)
+    end
+end
+
+local function startAutoFarm()
+    while _G.AutoFarm do
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            if not getQuest() then
+                -- Get the quest if not already taken
+                character.HumanoidRootPart.CFrame = CFrame.new(1060, 41, 1575) -- Quest NPC position
+                wait(1)
+            else
+                -- Find the monster and attack
+                local monsterPosition = getMonster()
+                if monsterPosition then
+                    character.HumanoidRootPart.CFrame = monsterPosition + Vector3.new(0, 10, 0) -- Hover above to avoid damage
+                    wait(1)
+                    attackFromDistance(character)
+                end
+            end
+        end
+        wait(1)
+    end
+end
+
+-- Add to UI menu
+_G.AutoFarm = false
+_G.AutoClick = false
+
+Tabs.Main:AddToggle("AutoFarmToggle", { 
+    Title = "Enable Auto Farm", 
+    Default = false, 
+    Callback = function(state)
+        _G.AutoFarm = state
+        if state then startAutoFarm() end
+    end
+})
+
+Tabs.Main:AddToggle("AutoClickToggle", { 
+    Title = "Enable Auto Click", 
+    Default = false, 
+    Callback = function(state)
+        _G.AutoClick = state
+    end
+})
